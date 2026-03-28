@@ -22,7 +22,6 @@ const modeConfig: Record<string, { name: string; color: string; icon: string }> 
   car: { name: '汽车/出租', color: '#F5222D', icon: 'Car' },
   subway: { name: '地铁', color: '#722ED1', icon: 'Subway' },
   train: { name: '火车', color: '#13C2C2', icon: 'Train' },
-  airplane: { name: '飞机', color: '#EB2F96', icon: 'Plane' },
 }
 
 const config = computed(() => modeConfig[props.mode] || { name: props.mode, color: '#666', icon: 'QuestionFilled' })

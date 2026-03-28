@@ -17,13 +17,49 @@ class TrajectoryStats(BaseModel):
     max_speed: float = Field(..., description="最高速度 (m/s)")
 
 
-class TrajectoryPrediction(BaseModel):
-    trajectory_id: str = Field(..., description="轨迹ID")
+# ========== 新增：分段预测结构 ==========
+
+class SegmentPrediction(BaseModel):
+    """单个轨迹段的预测结果"""
+    segment_id: int = Field(..., description="段序号")
     predicted_mode: str = Field(..., description="预测的交通方式")
     confidence: float = Field(..., description="置信度 (0-1)")
+    start_index: int = Field(..., description="起始点索引")
+    end_index: int = Field(..., description="结束点索引")
+    start_time: str = Field(..., description="开始时间")
+    end_time: str = Field(..., description="结束时间")
+    duration: float = Field(..., description="时长 (s)")
+    distance: float = Field(..., description="距离 (m)")
+    avg_speed: float = Field(..., description="平均速度 (m/s)")
+    points: List[TrajectoryPoint] = Field(..., description="该段的轨迹点")
+
+
+class ModeBreakdown(BaseModel):
+    """交通方式占比"""
+    mode: str = Field(..., description="交通方式")
+    percentage: float = Field(..., description="占比 (0-1)")
+    distance: float = Field(..., description="距离 (m)")
+    duration: float = Field(..., description="时长 (s)")
+
+
+class TrajectoryPrediction(BaseModel):
+    """轨迹预测结果 - 支持多段"""
+    trajectory_id: str = Field(..., description="轨迹ID")
+    
+    # 保留单一预测结果（主要交通方式，向后兼容）
+    predicted_mode: str = Field(..., description="主要交通方式")
+    confidence: float = Field(..., description="主要方式置信度")
+    
+    # 新增：分段预测结果
+    segments: List[SegmentPrediction] = Field(default=[], description="分段预测结果")
+    mode_breakdown: List[ModeBreakdown] = Field(default=[], description="各交通方式占比统计")
+    
+    # 原有字段
     points: List[TrajectoryPoint] = Field(..., description="轨迹点列表")
     stats: TrajectoryStats = Field(..., description="轨迹统计信息")
 
+
+# ========== 以下为原有结构，保持不变 ==========
 
 class TransportMode(BaseModel):
     id: str = Field(..., description="交通方式ID")

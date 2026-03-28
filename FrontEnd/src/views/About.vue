@@ -15,8 +15,8 @@
             难以满足精细化管理的需求。
           </p>
           <p>
-            本平台基于深度学习技术，利用GPS轨迹数据自动识别7种主要交通方式（步行、自行车、公交、
-            汽车/出租、火车、地铁、飞机），为智慧城市建设提供数据支撑。系统采用Bi-LSTM多模态网络架构，
+            本平台基于深度学习技术，利用GPS轨迹数据自动识别6种主要交通方式（步行、自行车、公交、
+            汽车/出租、火车、地铁），为智慧城市建设提供数据支撑。系统采用Bi-LSTM多模态网络架构，
             结合轨迹特征、空间特征和环境特征，实现了高精度的交通方式识别。
           </p>
           <p>
@@ -152,7 +152,7 @@
             4. <strong>类别均衡</strong>：为避免模型偏向样本多的类别，对各类别进行了均衡采样
           </p>
           
-          <h4>清洗后的7种交通方式</h4>
+          <h4>清洗后的6种交通方式</h4>
           <ul class="mode-list">
             <li>步行 (Walk)</li>
             <li>自行车 (Bike)</li>
@@ -160,7 +160,6 @@
             <li>汽车/出租 (Car &amp; taxi)</li>
             <li>火车 (Train)</li>
             <li>地铁 (Subway)</li>
-            <li>飞机 (Airplane)</li>
           </ul>
         </div>
       </div>
@@ -187,7 +186,7 @@
           </div>
           <div class="info-item">
             <span class="info-label">识别类别：</span>
-            <span class="info-value">7种交通方式</span>
+            <span class="info-value">6种交通方式</span>
           </div>
           <div class="info-item">
             <span class="info-label">开发框架：</span>

@@ -5,7 +5,6 @@ export const TRANSPORT_MODE_COLORS = {
   car: '#F5222D',
   subway: '#722ED1',
   train: '#13C2C2',
-  airplane: '#EB2F96',
 }
 
 export const TRANSPORT_MODE_NAMES = {
@@ -15,7 +14,6 @@ export const TRANSPORT_MODE_NAMES = {
   car: '汽车/出租',
   subway: '地铁',
   train: '火车',
-  airplane: '飞机',
 }
 
 export const TRANSPORT_MODE_ICONS = {
@@ -25,5 +23,4 @@ export const TRANSPORT_MODE_ICONS = {
   car: 'car',
   subway: 'subway',
   train: 'train',
-  airplane: 'plane',
 }

@@ -6,6 +6,64 @@
         <TrajectoryUpload @upload="handleUpload" />
       </div>
 
+      <div v-if="predictions.length > 0" class="sidebar-section">
+        <div class="section-header">
+          <h3>轨迹列表</h3>
+          <el-button
+            text
+            size="small"
+            type="danger"
+            @click="handleClearAll"
+          >
+            清空全部
+          </el-button>
+        </div>
+        <div class="trajectory-list">
+          <div
+            v-for="traj in predictions"
+            :key="traj.trajectory_id"
+            class="trajectory-item"
+            :class="{ 
+              active: selectedTrajectory?.trajectory_id === traj.trajectory_id,
+              hidden: !visibleTrajectoryIds.has(traj.trajectory_id)
+            }"
+          >
+            <div class="trajectory-item-main" @click="handleSelectTrajectory(traj)">
+              <div class="trajectory-icon">
+                <el-icon><Location /></el-icon>
+              </div>
+              <div class="trajectory-info">
+                <div class="trajectory-name">{{ '轨迹 ' + traj.trajectory_id.slice(0, 8) }}</div>
+                <div class="trajectory-meta">
+                  <span>{{ formatDistance(traj.stats.distance) }}</span>
+                  <span>•</span>
+                  <span>{{ formatDuration(traj.stats.duration) }}</span>
+                </div>
+              </div>
+              <ModeTag :mode="traj.predicted_mode" class="trajectory-mode" />
+            </div>
+            <div class="trajectory-actions">
+              <el-button
+                :icon="visibleTrajectoryIds.has(traj.trajectory_id) ? View : Hide"
+                text
+                size="small"
+                :type="visibleTrajectoryIds.has(traj.trajectory_id) ? 'primary' : 'info'"
+                @click.stop="handleToggleVisibility(traj.trajectory_id)"
+                :title="visibleTrajectoryIds.has(traj.trajectory_id) ? '隐藏轨迹' : '显示轨迹'"
+              />
+              <el-button
+                :icon="Delete"
+                text
+                size="small"
+                type="danger"
+                @click.stop="handleDeleteTrajectory(traj.trajectory_id)"
+                title="删除轨迹"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="sidebar-section">
         <h3>交通方式图例</h3>
         <div class="mode-filters">
@@ -21,7 +79,6 @@
               :style="{ background: mode.color }"
             ></div>
             <span class="mode-name">{{ mode.name }}</span>
-            <span class="mode-count">{{ getModeCount(mode.id) }}</span>
           </div>
         </div>
       </div>
@@ -63,59 +120,48 @@
           </div>
         </div>
       </div>
+
+      <div v-if="selectedTrajectory && selectedTrajectory.segments && selectedTrajectory.segments.length > 1" class="sidebar-section">
+        <SegmentTimeline
+          :segments="selectedTrajectory.segments"
+          :mode-breakdown="selectedTrajectory.mode_breakdown"
+          :active-segment-id="activeSegmentId"
+          @segment-click="handleSegmentClick"
+          @segment-hover="handleSegmentHover"
+        />
+      </div>
     </div>
 
     <div class="map-container">
       <MapView
         :trajectories="filteredPredictions"
         :selected-trajectory="selectedTrajectory"
+        :show-segments="true"
         @select="handleSelectTrajectory"
+        @select-segment="handleSegmentClick"
       />
-    </div>
-
-    <div v-if="selectedTrajectory" class="timeline-panel">
-      <div class="timeline-header">
-        <h4>时间轴</h4>
-        <el-button
-          text
-          @click="showTimeline = !showTimeline"
-        >
-          <el-icon><component :is="showTimeline ? ArrowDown : ArrowUp" /></el-icon>
-        </el-button>
-      </div>
-      <div v-if="showTimeline" class="timeline-content">
-        <el-slider
-          v-model="timelineProgress"
-          :min="0"
-          :max="100"
-          :step="1"
-          show-tooltip
-          @change="handleTimelineChange"
-        />
-        <div class="timeline-info">
-          <span>{{ formatTimelineTime(timelineProgress) }}</span>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Location, View, Hide, Delete } from '@element-plus/icons-vue'
 import { useTrajectoryStore } from '@/stores/trajectory'
 import MapView from '@/components/MapView.vue'
 import TrajectoryUpload from '@/components/TrajectoryUpload.vue'
 import ModeTag from '@/components/ModeTag.vue'
-import { TRANSPORT_MODE_COLORS, TRANSPORT_MODE_NAMES } from '@/utils/colors'
+import SegmentTimeline from '@/components/SegmentTimeline.vue'
+import type { SegmentPrediction, TrajectoryPrediction } from '@/types'
 
 const trajectoryStore = useTrajectoryStore()
 
 const transportModes = computed(() => trajectoryStore.transportModes)
 const predictions = computed(() => trajectoryStore.predictions)
 const selectedTrajectory = computed(() => trajectoryStore.selectedTrajectory)
-const loading = computed(() => trajectoryStore.loading)
+const visibleTrajectoryIds = computed(() => trajectoryStore.visibleTrajectoryIds)
+const filteredPredictions = computed(() => trajectoryStore.filteredPredictions)
 
 const modeFilters = ref<Record<string, boolean>>({
   walk: true,
@@ -124,15 +170,9 @@ const modeFilters = ref<Record<string, boolean>>({
   car: true,
   subway: true,
   train: true,
-  airplane: true,
 })
 
-const showTimeline = ref(false)
-const timelineProgress = ref(0)
-
-const filteredPredictions = computed(() => {
-  return predictions.value.filter(pred => modeFilters.value[pred.predicted_mode])
-})
+const activeSegmentId = ref<number | null>(null)
 
 onMounted(() => {
   trajectoryStore.loadTransportModes()
@@ -140,23 +180,66 @@ onMounted(() => {
 
 async function handleUpload(file: File, model: string) {
   try {
-    await trajectoryStore.predictTrajectory(file, model)
+    await trajectoryStore.predictTrajectory(file, model, true)
+    activeSegmentId.value = null
     ElMessage.success('预测完成！')
   } catch (error) {
     ElMessage.error('预测失败，请检查文件格式')
   }
 }
 
-function handleSelectTrajectory(trajectory: any) {
+function handleSelectTrajectory(trajectory: TrajectoryPrediction) {
   trajectoryStore.selectTrajectory(trajectory)
+  activeSegmentId.value = null
+}
+
+function handleToggleVisibility(trajectoryId: string) {
+  trajectoryStore.toggleTrajectoryVisibility(trajectoryId)
+}
+
+async function handleDeleteTrajectory(trajectoryId: string) {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这条轨迹吗？',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+    trajectoryStore.deleteTrajectory(trajectoryId)
+    ElMessage.success('轨迹已删除')
+  } catch {
+  }
+}
+
+async function handleClearAll() {
+  try {
+    await ElMessageBox.confirm(
+      '确定要清空所有轨迹吗？',
+      '清空确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+    trajectoryStore.clearPredictions()
+    ElMessage.success('已清空所有轨迹')
+  } catch {
+  }
+}
+
+function handleSegmentClick(segment: SegmentPrediction) {
+  activeSegmentId.value = segment.segment_id
+}
+
+function handleSegmentHover(segment: SegmentPrediction | null) {
 }
 
 function toggleModeFilter(mode: string) {
   modeFilters.value[mode] = !modeFilters.value[mode]
-}
-
-function getModeCount(mode: string): number {
-  return filteredPredictions.value.filter(p => p.predicted_mode === mode).length
 }
 
 function getConfidenceColor(confidence: number): string {
@@ -200,18 +283,6 @@ function formatTimeRange(points: any[]): string {
   
   return `${formatDate(start)} - ${formatDate(end)}`
 }
-
-function handleTimelineChange(value: number) {
-  console.log('Timeline progress:', value)
-}
-
-function formatTimelineTime(progress: number): string {
-  if (!selectedTrajectory.value || selectedTrajectory.value.points.length === 0) return '0%'
-  const index = Math.floor((progress / 100) * (selectedTrajectory.value.points.length - 1))
-  const point = selectedTrajectory.value.points[index]
-  if (!point) return '0%'
-  return new Date(point.timestamp).toLocaleTimeString('zh-CN')
-}
 </script>
 
 <style scoped>
@@ -223,7 +294,7 @@ function formatTimelineTime(progress: number): string {
 }
 
 .sidebar {
-  width: 280px;
+  width: 340px;
   background: #1a1f2e;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   overflow-y: auto;
@@ -242,11 +313,113 @@ function formatTimelineTime(progress: number): string {
   border-bottom: none;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
 .sidebar-section h3 {
   margin: 0 0 12px 0;
   font-size: 16px;
   font-weight: 600;
   color: #fff;
+}
+
+.trajectory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trajectory-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.trajectory-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.trajectory-item.active {
+  background: rgba(74, 144, 226, 0.1);
+  border-color: rgba(74, 144, 226, 0.3);
+}
+
+.trajectory-item.hidden {
+  opacity: 0.3;
+  border-color: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.trajectory-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.trajectory-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(74, 144, 226, 0.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a90e2;
+  flex-shrink: 0;
+}
+
+.trajectory-icon .el-icon {
+  font-size: 18px;
+}
+
+.trajectory-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trajectory-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e5e8eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trajectory-meta {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+}
+
+.trajectory-mode {
+  flex-shrink: 0;
+}
+
+.trajectory-actions {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: -1px;
 }
 
 .mode-filters {
@@ -287,14 +460,6 @@ function formatTimelineTime(progress: number): string {
   color: #e5e8eb;
 }
 
-.mode-count {
-  font-size: 12px;
-  color: #909399;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
 .trajectory-details {
   display: flex;
   flex-direction: column;
@@ -320,42 +485,5 @@ function formatTimelineTime(progress: number): string {
 .map-container {
   flex: 1;
   position: relative;
-}
-
-.timeline-panel {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #1a1f2e;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px 20px;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
-}
-
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.timeline-header h4 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.timeline-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.timeline-info {
-  text-align: center;
-  font-size: 12px;
-  color: #909399;
 }
 </style>

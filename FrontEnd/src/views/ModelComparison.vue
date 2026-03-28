@@ -187,7 +187,6 @@ const modeNames: Record<string, string> = {
   Bus: '公交',
   Subway: '地铁',
   Train: '火车',
-  Airplane: '飞机',
 }
 
 const expColors = {
@@ -243,7 +242,7 @@ async function loadAllReports() {
     key,
     label: modeNames[key] || key
   })).sort((a, b) => {
-    const order = ['Walk', 'Bike', 'Bus', 'Car & taxi', 'Subway', 'Train', 'Airplane']
+    const order = ['Walk', 'Bike', 'Bus', 'Car & taxi', 'Subway', 'Train']
     return order.indexOf(a.key) - order.indexOf(b.key)
   })
   

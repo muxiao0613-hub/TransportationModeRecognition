@@ -218,10 +218,9 @@ function initBarChart() {
     car: '汽车/出租',
     subway: '地铁',
     train: '火车',
-    airplane: '飞机',
   }
 
-  const colors = ['#4A90E2', '#52C41A', '#FA8C16', '#F5222D', '#722ED1', '#13C2C2', '#EB2F96']
+  const colors = ['#4A90E2', '#52C41A', '#FA8C16', '#F5222D', '#722ED1', '#13C2C2']
 
   const option = {
     tooltip: {
@@ -284,10 +283,9 @@ function initPieChart() {
     car: '汽车/出租',
     subway: '地铁',
     train: '火车',
-    airplane: '飞机',
   }
 
-  const colors = ['#4A90E2', '#52C41A', '#FA8C16', '#F5222D', '#722ED1', '#13C2C2', '#EB2F96']
+  const colors = ['#4A90E2', '#52C41A', '#FA8C16', '#F5222D', '#722ED1', '#13C2C2']
 
   const option = {
     tooltip: {

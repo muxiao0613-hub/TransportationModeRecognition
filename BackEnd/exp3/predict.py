@@ -5,9 +5,7 @@ Exp3 预测器 (独立版)
 import torch
 import numpy as np
 import os
-import sys
-
-from exp3.src.model_weather import TransportationModeClassifierWithWeather
+from src.model_weather import TransportationModeClassifierWithWeather
 
 
 class TransportationPredictorExp3:

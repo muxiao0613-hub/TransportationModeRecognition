@@ -53,14 +53,14 @@
 
 1. 创建并激活 conda 环境：
 ```bash
-conda create -n TraeAI-7 python=3.11
-conda activate TraeAI-7
+conda create -n code python=3.11
+conda activate code
 ```
 
 2. 安装依赖：
 ```bash
 cd BackEnd
-pip install -r requirements_api.txt
+pip install -r requirements.txt
 ```
 
 3. 启动后端服务：

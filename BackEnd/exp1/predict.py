@@ -5,9 +5,7 @@ Exp1 预测器 (独立版)
 import torch
 import numpy as np
 import os
-import sys
-
-from exp1.src.model import TransportationModeClassifier
+from src.model import TransportationModeClassifier
 
 
 class TrajectoryPredictor:

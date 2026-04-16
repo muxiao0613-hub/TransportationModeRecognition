@@ -11,7 +11,7 @@ export interface TrajectoryStats {
   avg_speed: number
   max_speed: number
 }
-
+ 
 // ========== 新增：分段预测类型 ==========
 
 export interface SegmentPrediction {

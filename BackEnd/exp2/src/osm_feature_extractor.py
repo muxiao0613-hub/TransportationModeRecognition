@@ -583,8 +583,18 @@ class OsmSpatialExtractor:
         """
         if os.path.exists(cache_path):
             with open(cache_path, 'rb') as f:
-                self._grid_cache = pickle.load(f)
-            print(f" -> 缓存已加载: {len(self._grid_cache)} 个网格")
+                loaded_cache = pickle.load(f)
+
+            if isinstance(loaded_cache, dict):
+                self._grid_cache = loaded_cache
+                grid_count = len(self._grid_cache)
+                if grid_count == 0:
+                    print(" -> 网格缓存为空，将在首次查询时自动填充")
+                else:
+                    print(f" -> 缓存已加载: {grid_count} 个网格")
+            else:
+                self._grid_cache = {}
+                print(f" -> 警告: 缓存格式异常({type(loaded_cache).__name__})，已忽略")
         else:
             print(f" -> 缓存文件不存在: {cache_path}")
 

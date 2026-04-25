@@ -203,9 +203,12 @@ def main():
         plt.figure(figsize=(10, 8))
         cm = confusion_matrix(y_true, y_pred)
         sns.heatmap(cm, annot=True, fmt='d', cmap='Oranges',
-                    xticklabels=class_names_str, yticklabels=class_names_str)
-        plt.title('Exp4 Confusion Matrix (LabelSmoothing + Focal Loss)', fontsize=14)
-        plt.xlabel('Predicted'); plt.ylabel('True')
+                    xticklabels=class_names_str, yticklabels=class_names_str,
+                    annot_kws={'size': 20})
+        plt.title('Exp4 Confusion Matrix (LabelSmoothing + Focal Loss)', fontsize=26)
+        plt.xlabel('Predicted', fontsize=22); plt.ylabel('True', fontsize=22)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
         plt.tight_layout()
         plt.savefig(os.path.join(OUTPUT_DIR, 'confusion_matrix.png'), dpi=300)
         plt.close()

@@ -59,8 +59,12 @@ def load_osm_data():
             grid_cache_path = Path(__file__).parent.parent.parent / "exp2" / "cache" / "spatial_grid_cache.pkl"
             if grid_cache_path.exists():
                 osm_extractor.load_cache(str(grid_cache_path))
-            
-            print(f"✅ OSM数据从缓存加载成功")
+
+            grid_size = len(getattr(osm_extractor, '_grid_cache', {}))
+            if grid_size == 0:
+                print("⚠️ OSM主数据已加载，但网格缓存为空；首次预测会自动填充缓存")
+            else:
+                print(f"✅ OSM数据从缓存加载成功（网格缓存: {grid_size}）")
             return
         
         osm_geojson_path = Path(__file__).parent.parent.parent / "data" / "exp2.geojson"

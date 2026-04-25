@@ -219,7 +219,7 @@ python train.py --epochs 100 --batch_size 32 --lr 0.001 --focal_loss
 ```bash
 # 评估模型
 cd exp1  # 或其他实验目录
-python evaluate.py --model_path checkpoints/best_model.pth
+python evaluate.py --model_path checkpoints/exp1_model.pth
 
 # 单条轨迹预测
 python predict.py --trajectory_path path/to/trajectory.csv

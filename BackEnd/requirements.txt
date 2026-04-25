@@ -33,3 +33,8 @@ meteostat>=1.6.0
 
 # 配置文件解析
 pyyaml>=6.0
+
+# Web 服务
+fastapi>=0.110.0
+uvicorn>=0.27.0
+python-multipart>=0.0.9

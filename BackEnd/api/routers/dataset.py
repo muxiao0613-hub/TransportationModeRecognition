@@ -9,8 +9,9 @@ from api.schemas import DatasetStats, DataCleaningStats, DataCleaningStep
 
 router = APIRouter()
 
-BASE_DIR = Path(__file__).parent.parent.parent
-PROCESSED_DIR = BASE_DIR / "data" / "processed"
+# Resolve project paths from this file location so runtime cwd never affects data loading.
+BASE_DIR = Path(__file__).resolve().parents[2]
+PROCESSED_DIR = (BASE_DIR / "data" / "processed").resolve()
 CLEANED_DATA_PATH = PROCESSED_DIR / "cleaned_balanced.pkl"
 BASE_SEGMENTS_PATH = PROCESSED_DIR / "base_segments.pkl"
 
@@ -18,6 +19,9 @@ BASE_SEGMENTS_PATH = PROCESSED_DIR / "base_segments.pkl"
 @router.get("/stats", response_model=DatasetStats)
 async def get_dataset_stats():
     """获取数据集统计信息"""
+    if not PROCESSED_DIR.exists():
+        raise HTTPException(status_code=404, detail=f"处理后数据目录不存在: {PROCESSED_DIR}")
+
     if not CLEANED_DATA_PATH.exists():
         raise HTTPException(status_code=404, detail="清洗后的数据文件不存在，请先运行数据准备脚本")
     
@@ -66,6 +70,9 @@ async def get_dataset_stats():
 @router.get("/mode-distribution")
 async def get_mode_distribution():
     """获取交通方式分布详情"""
+    if not PROCESSED_DIR.exists():
+        raise HTTPException(status_code=404, detail=f"处理后数据目录不存在: {PROCESSED_DIR}")
+
     if not CLEANED_DATA_PATH.exists():
         raise HTTPException(status_code=404, detail="清洗后的数据文件不存在")
     
